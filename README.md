@@ -6,7 +6,7 @@ Variational data assimilation test case with Lorenz-95 model
             pip install -r requirements.txt  
 
 **** To excute the code use the following command 
-            cd Da_code/VariationalMethods & python logger.py
+            cd Data_assimilation_framework/VariationalMethods & python logger.py
 
 Files descriptions:
     - logger.py : handles the logging the convergence history of different methods 
