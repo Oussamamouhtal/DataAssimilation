@@ -70,7 +70,7 @@ class lorenz95:
         k3 = self.l95(xx+(dt/2.0)*k2)
         k4 = self.l95(xx+dt*k3)
         return xx+(dt/6.0)*(k1+2.0*k2+2.0*k3+k4) 
-
+    
     # Jacobian of 4th order Runge-Kutta 
     def dRKstep(self,xx, dx):
         dt = self.dt
