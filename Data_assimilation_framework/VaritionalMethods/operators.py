@@ -341,31 +341,52 @@ class Split_Prec_Hessian:
 
 class spectrale_LMP:
 
-    def __init__(self, tetas, U,teta=1.0, beta = 1):
+    def __init__(self, tetas, U, bwidetilde = None, bTAb = None, selectedTHETA = None, teta=1.0):
         self.tetas = tetas
         self.teta = teta
         self.U = U
-        self.beta = beta
- 
+        self.bwidetilde = bwidetilde
+        self.bTAb = bTAb
+        self.selectedTHETA = selectedTHETA
+       
+
+        if selectedTHETA == 'lambda_k':
+            self.teta = self.tetas[0]
+        elif selectedTHETA == 'mediane':
+            self.teta = (self.tetas[0] +1)/2
+        elif selectedTHETA == 'ThetaOpt':
+            res_pro = (self.U.T).dot(self.bwidetilde)
+            num = self.bTAb - np.dot(res_pro, self.tetas * res_pro)
+            denom = np.dot(self.bwidetilde, self.bwidetilde) - np.dot(res_pro, res_pro)
+            self.teta = num/denom
+
+
+
     def dot(self,x):
         ''' F = In + U(tetas-1/2 - Il)Ut s.t. Y = FF '''
         l = self.tetas.shape[0]
         y = (self.U).T.dot(x)
-        diag_mat = (np.sqrt(self.teta)/np.sqrt(self.tetas)) - self.beta * np.ones(l)
+        diag_mat = (np.sqrt(self.teta)/np.sqrt(self.tetas)) - np.ones(l)
         y = diag_mat * y # term by term mult
         y = (self.U).dot(y)
-        y = self.beta * x + y
+        y = x + y
         return y
     def invdot(self,x):
         ''' F = In + U(tetas1/2 - Il)Ut s.t. Y = FF '''
         l = self.tetas.shape[0]
         y = (self.U).T.dot(x)
-        diag_mat = (np.sqrt(self.tetas)/np.sqrt(self.teta)) - self.beta * np.ones(l)
+        diag_mat = (np.sqrt(self.tetas)/np.sqrt(self.teta)) - np.ones(l)
         y = diag_mat * y # term by term mult
         y = (self.U).dot(y)
-        y = self.beta * x + y
-        return y    
+        y = x + y
+        return y   
+
+       
     
+        
+        
+    
+
 
 class MatrixOperations:
 
@@ -375,224 +396,58 @@ class MatrixOperations:
         self.k = k
 
     def calculate_A(self):
+
         matrix_A = np.zeros((self.n, self.n))
         for j in range(self.n):
             matrix_A[:, j] = self.A.dot(np.eye(self.n)[:, j])
         return matrix_A
 
     def calculate_lambda(self):
+
         matrix_A = self.calculate_A()
         lambda_A, eignvect_A = np.linalg.eigh(matrix_A)
         lambda_A = lambda_A[::-1]
         eignvect_A = eignvect_A.T[::-1].T
-        return eignvect_A[:, :self.k], lambda_A[:self.k]
+        return eignvect_A, lambda_A
+    
+    def calculate_kEigenPair(self):
+
+        eignvect_A, lambda_A = self.calculate_lambda()
+        return eignvect_A[:,:self.k], lambda_A[:self.k]
+    
+    def calculate_ksmallest(self):
+
+        matrix_A = self.calculate_A()
+        lambda_A, eignvect_A = np.linalg.eigh(matrix_A)
+        return eignvect_A[:,:self.k], lambda_A[:self.k]
     
 
-class exactSpectral_Precond(spectrale_LMP):
-    ''' 
-    Class for Spectral Precond from exact eigen-pair
-    '''
-    def __init__(self, A, n, k, selectedTHETA, index, b, theta):
-
-        self.A = A
-        self.n = n
-        self.k = k
-        self.selectedTHETA = selectedTHETA
-        self.index = index
-        self.theta = theta
-        self.b = b
-
-        getMatrixA = MatrixOperations(self.A, self.n, self.k)
-        self.U, self.tetas = getMatrixA.calculate_lambda()
-        self.beta = 1.0
-
-
-        if selectedTHETA == 'eigenvalue':
-            self.teta =  self.tetas[index]
-        elif selectedTHETA == 'optimizedTheta':
-            res_pro = (self.U.T).dot(b)
-            num = np.dot(b, A.dot(b)) - np.dot(res_pro, self.tetas*res_pro)
-            denom = np.dot(b, b) - np.dot(res_pro, res_pro)
-            self.teta = num / denom
-        elif selectedTHETA == 'anyTheta': 
-            self.teta = theta
-
-
-
-
-
-
-
-
-
-    
-
-class rSpectral_Precond(spectrale_LMP):
-    ''' 
-    Class for Spectral Precond from RSVD
-    '''
-
-    def __init__(self,A,k,p,Omega,selectedTHETA,method='RSVD',offset=0, index = 0, theta = 1, beta= 1.0):
-        self.method = method
-        self.k = k
-        self.p = p
-        self.selectedTHETA = selectedTHETA
-        self.index = index
-        self.beta = beta
-        self.theta = theta
-
-        def RSVD(A,k,Omega):
-            ''' Compute the random SVD of A with target rank k and oversampling p'''
-            n, l = Omega.shape
-            Y = np.zeros((n,l))
-            
-            ### Stage A
-            for j in range(l):
-                w = Omega[:,j]
-                Y[:,j] = A.dot(w)
-            Q,_ = linalg.qr(Y,mode='economic')
-            
-            ### Stage B
-            B = np.zeros_like(Y)
-            for j in range(l):
-                B[:,j] = A.dot(Q[:,j])
-            B = B.T # We used B_T = AQ instead of B = Q.TA
-            Ub,s,Vh = linalg.svd(B,full_matrices=False)
-            U = Q @ Ub
+    def calculate_cond(self):
+        eignvect_A, lambda_A = self.calculate_lambda()
         
-            return U[:,:k],s[:k]
-        
-        def single_pass(A,k,Omega):
-            ''' Compute the random SVD of A with target rank k and oversampling p
-            A is accessed half times compare to basic '''
-            n, l = Omega.shape
-            Q = 4
-            Y = np.zeros((n,l))
-            ### Stage A
-            for j in range(l):
-                w = Omega[:,j]
-                Y[:,j] = A.dot(w) - w
-
-            Q,_ = linalg.qr(Y,mode='economic')
-
-
-            ### Stage B
-            C,*_ = linalg.lstsq(Omega.T@Q, Y.T@Q)
-            C = C.T
-        
-            Ub,s,Vh = linalg.svd(C,full_matrices=False)
-            U = Q @ Ub
-
-            if (offset > 0):
-                Uout = np.concatenate((U[:,:5],U[:,5+offset:10+offset]),axis=1)
-                sout = np.concatenate((s[:5],s[5+offset:10+offset]))
-                return Uout,sout
-
-            return U[:,:k],s[:k]
-            
-        def Nystrom(A, k, Omega):
-            ''' Compute RSVD of A-SPD '''
-            n, l = Omega.shape
-            
-            Y = np.zeros((n, l))
-            ### Stage A
-            for j in range(l):
-                w = Omega[:, j]
-                Y[:, j] = A.dot(w)
-
-            Q, _ = linalg.qr(Y, mode='economic')
-
-            ### Stage B
-            B1 = np.zeros_like(Y)
-            for j in range(l):
-                B1[:, j] = A.dot(Q[:, j])
-            B2 = np.dot(Q.T, B1)
-            C = linalg.cholesky(B2, lower=False)  # B2 = C @ C.T, C upper triangular
-            F = linalg.solve_triangular(C.T, B1.T, lower=True)
-            F = F.T
-            U, sroot, Vh = linalg.svd(F, full_matrices=False)
-            s = sroot * sroot
- 
-
-            return U[:,:k],s[:k]
-
-        def Nystrom_SP(A, k, Omega):
-            ''' Compute RSVD of A-SPD with Nystrom single pass'''
-            n, l = Omega.shape
-            Y = np.zeros((n, l))
-            G = Omega
-
-            ### Stage A
-            for j in range(l):
-                g = G[:, j]
-                Y[:, j] = A.dot(g)
-
-            ### Stage B
-            B = np.dot(G.T, Y)
-            C = linalg.cholesky(B, lower=False)
-            F = linalg.solve_triangular(C.T, Y.T, lower=True)
-            F = F.T
-            U, sroot, Vh = linalg.svd(F, full_matrices=False)
-            s = sroot * sroot
-
-
-            return U[:, :k], s[:k]
-
-
-        if method == 'basic':
-            self.U,self.tetas = RSVD(A,k,Omega)
-        elif method=='single_pass':
-            self.U,self.tetas = single_pass(A,k,Omega)
-        elif method=='nystrom':
-            self.U,self.tetas = Nystrom(A,k,Omega)
-        elif method=='nystrom_sp':
-            self.U,self.tetasss = Nystrom_SP(A,k,Omega)
-
- 
-        if selectedTHETA == 'eigenvalue':
-            self.teta =  self.tetas[index]
-
-        elif selectedTHETA == 'anyTheta': 
-            self.teta = theta
-
+        return lambda_A[0] / lambda_A[-1]
     
+    def calculate_radius(self):
 
-class OptimizerTheta:
-    """
-    A class that handles tha computation of theta optimum
-    """
-    def __init__(self, A, k, b, iter, n, du):
-        self.A = A
-        self.k = k
-        self.b = b
-        self.iter = iter
-        self.n = n
-        self.du = du
+        eignvect_A, lambda_A = self.calculate_lambda()
 
-
-    def objective_function (self, theta):    
-        """
-        Define the quadratic function to minimize
-        with respect to theta
-        """
-        F = exactSpectral_Precond(self.A, self.n, self.k, 'anyTheta', 1, self.b, theta = theta)
-        Atilde = Split_Prec_Hessian(self.A, [F])
-        btilde = F.dot(self.b)
-        ziter = CG(Atilde, self.du, btilde, self.iter, 1e-6 , ortho = True)[0][-self.n:] # Get the approximate solution at iter
-        ziter = F.dot(ziter)
-        # Calculate the quadratic function
-        quadra = self.A.dot(ziter)
-        quadra = np.dot(ziter, quadra) - 2 * np.dot(self.b, ziter)
-        return quadra
+        return (lambda_A[0] - lambda_A[-1]) 
     
-    
-    def Optimize (self):
+    def calculate_lambda_k (self):
 
-        result = minimize(self.objective_function, 10)  # 10 is an initial point
-        min_value = result.fun
-        optimized_params = result.x
-        return optimized_params[0]
+        eignvect_A, lambda_A = self.calculate_lambda()
+        return lambda_A[self.k]
     
+    def calculate_lambda_max (self):
+
+        eignvect_A, lambda_A = self.calculate_lambda()
+        return lambda_A[0]
+    
+    def calculate_lambda_min(self):
+
+        eignvect_A, lambda_A = self.calculate_lambda()
+        return lambda_A[-1]
+
 
 
 
@@ -601,9 +456,9 @@ class init_p:
     A class that handles the computation 
     of the initial guess
     """
-    def __init__(self, A,b, eigenvalues, eigenvectors):
+    def __init__(self,b, eigenvalues, eigenvectors):
 
-        self.A = A
+
         self.b = b
         self.eigenvalues = eigenvalues
         self.eigenvectors = eigenvectors
@@ -619,19 +474,7 @@ class init_p:
         du = self.eigenvectors @ du
         return du
     
-    def deflated_cg_initialGuess(self, W):
-        """
-        Initial guess for deflated cg algo
-        """
-        du = W.T @ self.b
-        _, k_W = W.shape
-        P = np.zeros((self.b.shape[0], k_W))
-        for j in range(k_W):
-            w = W[:,j]
-            P[:,j] = self.A.dot(w) 
-        du = np.linalg.solve(P.T @ W, du)
-        du = W @ du
-        return du
+
     
     
 
@@ -645,7 +488,7 @@ def get_ritzpair(T_Lanczos, V_Lanczos, iter, beta_Lanczos):
     lambda_T , eignvect_T = np.linalg.eigh(T_Lanczos)
     j = 0
     for v_p in lambda_T:
-        if abs(beta_Lanczos * eignvect_T[iter][j]) / v_p > 1e-3:
+        if abs(beta_Lanczos * eignvect_T[iter][j]) / v_p > 1e-6:
             eignvect_T= np.delete(eignvect_T, j, axis=1)
             lambda_T = np.delete(lambda_T, j)
         else:

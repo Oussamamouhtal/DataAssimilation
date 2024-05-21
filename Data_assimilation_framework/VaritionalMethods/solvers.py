@@ -5,10 +5,27 @@
   Copyright (c) 2021 CERFACS
   Updates: 2022 - Lanczos code - Jean-Guillaume De Damas
 """
+
 import numpy as np
 from scipy import linalg
+from time import time
+def solve_lower_triangular(matrix, vector):
+    n = len(vector)
+    solution = [0] * n
 
+    for i in range(n):
+        solution[i] = (vector[i] - sum(matrix[i][j] * solution[j] for j in range(i))) / matrix[i][i]
 
+    return solution
+
+def solve_upper_triangular(matrix, vector):
+    n = len(vector)
+    solution = [0] * n
+
+    for i in range(n - 1, -1, -1):
+        solution[i] = (vector[i] - sum(matrix[i][j] * solution[j] for j in range(i + 1, n))) / matrix[i][i]
+
+    return solution
 
 
 
@@ -79,7 +96,7 @@ def pcg(A,x0,b,F,maxit,tol, ortho=True,verbose = False):
 
 
 
-def deflated_CG(A, x, b, maxit, tol , W, reortho = True):
+def deflated_CG(A,b, maxit, tol , W, reortho = True):
     """ 
     Deflated Conjugate Gradient Algorithm solves the symmetric positive definite linear system 
             A x  = b 
@@ -97,25 +114,31 @@ def deflated_CG(A, x, b, maxit, tol , W, reortho = True):
         A_W[:,j] = A.dot(W[:,j])
     W_A_W =  A_W.T @ W    # form the matrix W^T A W
     W_A_W = np.linalg.cholesky(W_A_W) # form the square root of W^T A W
-    WW = W.T @ W          # form the matrix W^T W for a re-orthogonalization step
-    WW = np.linalg.cholesky(WW) # form the square root of W^T W
-
+    #### Construct the initial guess ######
+    forw_backw_sub = solve_lower_triangular(W_A_W,  W.T.dot(b))                  # forward substitution
+    forw_backw_sub = solve_upper_triangular(W_A_W.T, forw_backw_sub)   # backward substitution
+    x = W.dot(forw_backw_sub)
+    ######################################
     flag = 0                      # initialize a flag variable to check if the algorithm converged
     r = b - A.dot(x)  
-    if reortho:
-        forw_backw_sub = np.linalg.solve(WW, W.T @ r)          # forward substitution
-        forw_backw_sub = np.linalg.solve(WW.T, forw_backw_sub) # backward substitution
-        r = r - W @ forw_backw_sub
+    nrmb = np.linalg.norm(b)
+
         
-    mu = np.linalg.solve(W_A_W, A_W.T @ r)         # forward substitution
-    mu = np.linalg.solve(W_A_W.T, mu)              # backward substitution
-    p = np.copy(r) - W @ mu                        # set the initial search direction to r - W.dot(mu)
+    mu = solve_lower_triangular(W_A_W, A_W.T.dot(r))         # forward substitution
+    mu = solve_upper_triangular(W_A_W.T, mu)              # backward substitution
+    p = np.copy(r) - W.dot(mu)                        # set the initial search direction to r - W.dot(mu)
     rs_old = np.dot(r, r)         # compute the initial squared residual
     nrmb = np.linalg.norm(b)
     nrmr = np.linalg.norm(r)
     
     X = x 
     for i in range(maxit):  
+
+
+        #### Re-orthogonalisation
+        if reortho:
+            forw_backw_sub = W.T.dot(r)
+            r = r - W.dot(forw_backw_sub)
         
         q = A.dot(p) 
         curvature = np.dot(p, q)          
@@ -123,22 +146,19 @@ def deflated_CG(A, x, b, maxit, tol , W, reortho = True):
         x = x + alpha * p               # update the current approximation x
         r = r - alpha * q               # update the residual
 
-        #### Re-orthogonalisation
-        if reortho:
-            forw_backw_sub = np.linalg.solve(WW, W.T @ r)          # forward substitution
-            forw_backw_sub = np.linalg.solve(WW.T, forw_backw_sub) # backward substitution
-            r = r - W @ forw_backw_sub
+
 
         X = np.concatenate((X, x))
         rs_new = np.dot(r, r)           # compute the new squared residual
         res = np.sqrt(rs_new) 
         beta = (rs_new / rs_old)
         
-        if  res < tol :  
+        if  res / nrmb < tol :  
+            print(res / nrmb, i)
             break
-        mu = np.linalg.solve(W_A_W, A_W.T @ r)         # forward substitution
-        mu = np.linalg.solve(W_A_W.T, mu)              # backward substitution
-        p = r + beta * p  - W @ mu # update the search direction
+        mu = solve_lower_triangular(W_A_W, A_W.T.dot(r))         # forward substitution
+        mu = solve_upper_triangular(W_A_W.T, mu)       # backward substitution
+        p = r + beta * p  - W.dot(mu)                             # update the search direction
         rs_old = rs_new 
  
     
@@ -149,7 +169,7 @@ def deflated_CG(A, x, b, maxit, tol , W, reortho = True):
 
 
 
-def CG(A, x, b, maxit, tol , Eigenvec = None, ortho = True, get_T = False, projec = False):
+def CG(A, x, b, maxit, tol, ortho = True, get_T = False):
     """ 
     Conjugate Gradient Algorithm
         CG solves the symmetric positive definite linear system 
@@ -162,16 +182,11 @@ def CG(A, x, b, maxit, tol , Eigenvec = None, ortho = True, get_T = False, proje
     
     n = b.shape[0]
     flag = 0                      # initialize a flag variable to check if the algorithm converged
-    r = b - A.dot(x) 
-    ### Step of reorthogonalization when choosing x_0 = S_k Lambda_k^{-1} S_k^T b  
-    if projec:                    
-        multi = Eigenvec.T @ r
-        multi = Eigenvec @ multi
-        r = r - multi
+    r = b - A.dot(x)
     p = np.copy(r)                         # set the initial search direction to r
-    rs_old = np.dot(r, r)         # compute the initial squared residual
+    rs_old = np.dot(r, r)         # compute the initial squared residual   
     nrmb = np.linalg.norm(b)
-    nrmr = np.linalg.norm(r)
+
     ### Construct the Lancsoz matcies T and V
     if get_T:
         beta = 0
@@ -187,16 +202,16 @@ def CG(A, x, b, maxit, tol , Eigenvec = None, ortho = True, get_T = False, proje
                 R = np.array([r/(rs_old**0.5)]).T
             else:
                 R = np.append(R, np.array([r/(rs_old**0.5)]).T, axis=1)
+            
+
+
         
         q = A.dot(p) 
         curvature = np.dot(p, q)      
         alpha = rs_old / curvature      # compute the step size
         x = x + alpha * p               # update the current approximation x
         r = r - alpha * q               # update the residual
-        if projec:
-            multi = Eigenvec.T @ r
-            multi = Eigenvec @ multi
-            r = r - multi
+
         X = np.concatenate((X, x))
         # Tridiagonal matrix 
         if get_T:
@@ -207,10 +222,12 @@ def CG(A, x, b, maxit, tol , Eigenvec = None, ortho = True, get_T = False, proje
                 proj = np.dot(R[:,j].T,r)
                 r = r - proj*R[:,j]
         rs_new = np.dot(r, r)           # compute the new squared residual
-        res = np.sqrt(rs_new) 
         beta = (rs_new / rs_old)
-       
-        if  res < tol :  
+
+        
+        res = np.sqrt(rs_new)
+        if res/nrmb < tol:    
+            print(res/nrmb, i)
             break
         
         p = r + beta * p  # update the search direction
@@ -355,7 +372,7 @@ def Lanczos(A,x0,b,maxit,tol,ortho=True, get_T = False):
         abscisses.append(i)
         #if  beta < 1e-12 or error < tol:
         #    break
-            
+                            
         T[i,i+1] = beta
         T[i+1,i] = beta
         v = w/beta
