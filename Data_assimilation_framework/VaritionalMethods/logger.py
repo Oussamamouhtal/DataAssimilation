@@ -21,10 +21,10 @@ def plot(qudcost, max_outer, max_inner, OuterLoop = False, LineStyle = ':d',labe
 # ===================== The Problem Parameters =====================
 n = 300
 m_t = 40
-Nt = 2
+Nt = 10
 
 # ===================== The Solvers Parameters =====================
-max_inner = 40  # max iteration for cg loops
+max_inner = 60  # max iteration for cg loops
 max_outer = 2   # max iteration for Gauss Newton loop
 
 
@@ -40,6 +40,8 @@ OutUnprec= fourDvar(n,m_t, Nt, max_outer, max_inner,
 OutLmpOne = fourDvar(n,m_t, Nt, max_outer, max_inner, 
                             'Spectral_LMP' , IP = False) 
 
+OutLmpOneIP = fourDvar(n,m_t, Nt, max_outer, max_inner, 
+                            'Spectral_LMP' , IP = True) 
 
 OutLmpLam= fourDvar(n,m_t, Nt, max_outer, max_inner,
                             'Spectral_LMP', selectedTHETA = 'lambda_k', 
@@ -59,22 +61,25 @@ OutDeflation = fourDvar(n,m_t, Nt, max_outer, max_inner,
 # ==================== Displays ====================
 
 
-plot(OutUnprec, max_outer, max_inner, OuterLoop = True,
-      LineStyle = ':d',label = 'No second level preconditionner')
+plot(OutUnprec, max_outer, max_inner, OuterLoop = False,
+      LineStyle = ':d',label = 'No sLMP')
 
-plot(OutLmpOne, max_outer, max_inner, OuterLoop = True,
-      LineStyle = ':o',label = 'scaled LMP with  '+ r'$ \theta = 1$')
+plot(OutLmpOne, max_outer, max_inner, OuterLoop = False,
+      LineStyle = ':o',label = r'$ \theta = 1$')
 
-plot(OutLmpLam, max_outer, max_inner, OuterLoop = True,
-      LineStyle = ':o',label = 'scaled LMP with  '+ r'$ \theta = \lambda_k$')
+plot(OutLmpOneIP, max_outer, max_inner, OuterLoop = False,
+      LineStyle = ':o',label = r'$ \theta = 1$' + '+ IP')
 
-plot(OutLmpMed, max_outer, max_inner, OuterLoop = True,
-      LineStyle = ':*',label = 'scaled LMP with  '+ r'$ \theta = \frac{\lambda_k +1}{2}$')
+plot(OutLmpLam, max_outer, max_inner, OuterLoop = False,
+      LineStyle = ':o',label = r'$ \theta = \lambda_k$')
 
-plot(OutLmpOpt, max_outer, max_inner, OuterLoop = True, 
-     LineStyle = ':*',label = 'scaled LMP with  ' + r'$ \theta = \theta_{mass}$')
+plot(OutLmpMed, max_outer, max_inner, OuterLoop = False,
+      LineStyle = ':*',label = r'$ \theta = \frac{\lambda_k +1}{2}$')
 
-plot(OutDeflation, max_outer, max_inner, OuterLoop = True,
+plot(OutLmpOpt, max_outer, max_inner, OuterLoop = False, 
+     LineStyle = ':*',label = r'$ \theta = \theta_{mass}$')
+
+plot(OutDeflation, max_outer, max_inner, OuterLoop = False,
       LineStyle = ':*',label = 'Deflated CG')
 
 

@@ -1,7 +1,6 @@
 """
   Module: 4D-Variational Data Assimilation
   Authors: Selime Gurol
-         : Olivier Goux - Plots
   Licensing: this code is distributed under the CeCILL-C license
   Copyright (c) 2021 CERFACS
 """
