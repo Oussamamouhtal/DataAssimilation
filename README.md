@@ -41,6 +41,6 @@ To set up the environment, follow these steps:
 
 ## Usage
 
-To run the 4D-Var data assimilation process, you need to have the necessary model, operators, and solver files in place. The main function is 'fourDvar', which returns a list of values of the quadratic cost function. You can run 'logger.py' to generate a plot showing the convergence of the Gauss-Newton process or plot just the second inner loop to benchmark different inner solvers.
+To run the 4D-Var data assimilation process, you need to have the necessary model, operators, and solver files in place. The main function is `fourDvar`, implemented in `fourdvar.py`, which returns a list of values of the quadratic cost function. You can run `logger.py` to generate a plot showing the convergence of the Gauss-Newton process or plot just the second inner loop to benchmark different inner solvers.
 
 
