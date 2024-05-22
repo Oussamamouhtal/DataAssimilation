@@ -8,7 +8,7 @@ def plot(qudcost, max_outer, max_inner, OuterLoop = False, LineStyle = ':d',labe
     plt.xlabel('total CG itérations')
     plt.ylabel('Quadratic cost function')
     plt.yscale('log')
-    plt.axvline(x = 0, color = 'black')
+    plt.axvline(x = 0, color = 'black') 
     if OuterLoop == True :
         for i in range(max_outer-1):
             plt.axvline(x = (i+1)*(max_inner+1), color = 'black')
@@ -19,14 +19,13 @@ def plot(qudcost, max_outer, max_inner, OuterLoop = False, LineStyle = ':d',labe
 
 
 # ===================== The Problem Parameters =====================
-n = 30
-0
-m_t = 30
+n = 300
+m_t = 40
 Nt = 2
 
 # ===================== The Solvers Parameters =====================
 max_inner = 40  # max iteration for cg loops
-max_outer = 4   # max iteration for Gauss Newton loop
+max_outer = 2   # max iteration for Gauss Newton loop
 
 
 
@@ -39,7 +38,7 @@ OutUnprec= fourDvar(n,m_t, Nt, max_outer, max_inner,
  
 
 OutLmpOne = fourDvar(n,m_t, Nt, max_outer, max_inner, 
-                            'Spectral_LMP' , IP = True) 
+                            'Spectral_LMP' , IP = False) 
 
 
 OutLmpLam= fourDvar(n,m_t, Nt, max_outer, max_inner,
