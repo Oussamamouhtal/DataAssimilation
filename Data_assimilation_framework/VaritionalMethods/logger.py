@@ -4,6 +4,18 @@ import matplotlib.pyplot as plt
 
 def plot(qudcost, max_outer, max_inner, OuterLoop = False, LineStyle = ':d',label = None):
 
+    """
+
+    Plot the quadratic cost function versus CG iteration.
+    Parameters:
+      qudcost  : A list or array containing the values of the quadratic cost function.
+      max_outer: An integer representing the maximum number of outer loop iterations.
+      max_inner: An integer representing the maximum number of inner loop iterations.
+      OuterLoop: A boolean indicating whether to use outer loop or not. Default is False.
+      LineStyle: A string defining the line style for the plot. Default is ':d'.
+      label    : A string containing the label for the plot. Default is None.
+
+    """
 
     plt.xlabel('total CG itérations')
     plt.ylabel('Quadratic cost function')
