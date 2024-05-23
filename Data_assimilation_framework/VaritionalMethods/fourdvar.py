@@ -50,7 +50,7 @@ def fourDvar(n, m_t, Nt, max_outer, max_inner , method, selectedTHETA = None , I
         max_outer       : number of maximum outer loops (Gauss-Newton loop) (int)
         max_inner       : number of maximum inner loops (Conjugate Gradient loop) (int)
         method          : define the method to solve the inner loops (str):
-                            Unprecon_CG : solving linear system without preconditioning
+                            Unprecon_CG : solving linear system without scaled LMP
                             Spectral    : solving linear system with scaled spectral LMP
                             Deflated_CG : solving linear system with Deflated CG
         selectedTHETA   : choose the scaling parameter (str):
