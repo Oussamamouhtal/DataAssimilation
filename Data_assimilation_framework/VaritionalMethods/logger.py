@@ -21,7 +21,7 @@ def plot(qudcost, max_outer, max_inner, OuterLoop = False, LineStyle = ':d',labe
 # ===================== The Problem Parameters =====================
 n = 300
 m_t = 40
-Nt = 2
+Nt = 2 
 
 # ===================== The Solvers Parameters =====================
 max_inner = 60  # max iteration for cg loops
