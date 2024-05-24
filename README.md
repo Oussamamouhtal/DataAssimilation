@@ -6,8 +6,7 @@ This project implements the 4D-Var (Four-Dimensional Variational Data Assimilati
 
 - [Installation](#installation)
 - [Usage](#usage)
-- [References](#references)
-
+ 
 ## Installation
 
 To set up the environment, follow these steps:
