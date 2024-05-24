@@ -36,7 +36,7 @@ m_t = 40
 Nt = 2 
 
 # ===================== The Solvers Parameters =====================
-max_inner = 60  # max iteration for cg loops
+max_inner = 20  # max iteration for cg loops
 max_outer = 2   # max iteration for Gauss Newton loop
 
 
