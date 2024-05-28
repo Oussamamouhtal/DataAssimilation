@@ -479,11 +479,13 @@ class init_p:
     
 
 
-        
+class EmptyLambdaError(Exception):
+    """Exception thrown when a list is empty."""
+    pass       
 
 def get_ritzpair(T_Lanczos, V_Lanczos, iter, beta_Lanczos):
     """
-    Select the converged ritz pair up to a tolerance 1e-3
+    Select the converged ritz pair up to a tolerance 1e-6
     """
     lambda_T , eignvect_T = np.linalg.eigh(T_Lanczos)
     j = 0
@@ -496,4 +498,25 @@ def get_ritzpair(T_Lanczos, V_Lanczos, iter, beta_Lanczos):
                 
     return lambda_T ,  V_Lanczos @ eignvect_T
     
+
+def plotRitzValues(RitzValue, ExactEigenValue, CGiter):
+    plt.figure()
+    for i, liste in enumerate(RitzValue):
+        if i == 0:
+            plt.scatter([i] * len(liste), liste,color='blue', label = "Ritz Values")
+        else:
+            plt.scatter([i] * len(liste), liste, color='blue')
+    for i, liste in enumerate(ExactEigenValue):
+        if i == 0:
+            plt.scatter([i] * len(liste), liste, marker = 'x', color='red', label = "True Spectrum")
+        else:
+            plt.scatter([i] * len(liste), liste, marker = 'x', color='red')
+
+    plt.xlabel('CG-iteration')
+    plt.ylabel('Convergence of Ritz value')
+    plt.xticks(range(len(RitzValue)), CGiter)
+    plt.legend()
+    plt.yscale('log')
+    plt.grid(True)
+    plt.show()
         

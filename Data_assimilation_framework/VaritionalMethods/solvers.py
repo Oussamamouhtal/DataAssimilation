@@ -169,7 +169,7 @@ def deflated_CG(A,b, maxit, tol , W, reortho = True):
 
 
 
-def CG(A, x, b, maxit, tol, ortho = True, get_T = False):
+def CG(A, x, b, maxit, tol, ortho = True, get_T = False, PlotRitz = False):
     """ 
     Conjugate Gradient Algorithm
         CG solves the symmetric positive definite linear system 
@@ -187,7 +187,7 @@ def CG(A, x, b, maxit, tol, ortho = True, get_T = False):
     rs_old = np.dot(r, r)         # compute the initial squared residual   
     nrmb = np.linalg.norm(b)
 
-    ### Construct the Lancsoz matcies T and V
+    ### Construct the Lancsoz matrices T and V
     if get_T:
         beta = 0
         alpha_old = 1
@@ -196,6 +196,7 @@ def CG(A, x, b, maxit, tol, ortho = True, get_T = False):
         V[:,0] = r / np.sqrt(rs_old)
 
     X = x 
+    RitzValues = []  # For plotting ritz values
     for i in range(maxit):  
         if ortho:
             if i == 0:
@@ -216,6 +217,9 @@ def CG(A, x, b, maxit, tol, ortho = True, get_T = False):
         # Tridiagonal matrix 
         if get_T:
             T[i,i] = (1 / alpha) + (beta / alpha_old)
+            if PlotRitz:
+                ritz , _ = np.linalg.eigh(T[:i + 1,:i + 1])
+                RitzValues.append(ritz)
         # Re orthogonalization
         if ortho:
             for j in range(i+1):
@@ -227,7 +231,7 @@ def CG(A, x, b, maxit, tol, ortho = True, get_T = False):
         
         res = np.sqrt(rs_new)
         if res/nrmb < tol:    
-            print(res/nrmb, i)
+            #print(res/nrmb, i)
             break
         
         p = r + beta * p  # update the search direction
@@ -243,7 +247,9 @@ def CG(A, x, b, maxit, tol, ortho = True, get_T = False):
     
     if res > tol:
         flag = 1
-    if get_T:
+    if get_T and PlotRitz:
+        return T[:i + 1,:i + 1] ,  V[:,:i+1] , X, i, flag, beta_ritz, RitzValues
+    elif get_T:
         return T[:i + 1,:i + 1] ,  V[:,:i+1] , X, i, flag, beta_ritz
     else:
         return  X, i

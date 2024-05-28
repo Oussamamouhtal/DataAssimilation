@@ -33,7 +33,7 @@ from numpy.random import randn # To generate samples from a normalized Gaussian
 import matplotlib.pyplot as plt # To plot a graph
 plt.ioff()
 import matplotlib.animation as anim # To plot a graph
-from operators import obs_operator, Rmatrix, Bmatrix, init_p, get_ritzpair 
+from operators import obs_operator, Rmatrix, Bmatrix, init_p, EmptyLambdaError, get_ritzpair, plotRitzValues 
 from operators import Hessian4dVar, Precond, PrecondHessian4dVar, spectrale_LMP, Split_Prec_Hessian, MatrixOperations
 from models import lorenz95 
 from solvers import pcg, Bcg, Lanczos, CG, deflated_CG
@@ -166,6 +166,8 @@ def fourDvar(n, m_t, Nt, max_outer, max_inner , method, selectedTHETA = None , I
         if iter_outer == 0:
             T_Lanczos , V_Lanczos, dxs, iter, flag, beta_Lanczos = CG(Atilde, du, btilde,  max_inner,tol, get_T = True)
             lambda_ , eignvect = get_ritzpair(T_Lanczos, V_Lanczos, iter, beta_Lanczos)    # Converged ritz pair
+
+        
         else :
     
             if method == 'Unprecon_CG':
@@ -215,11 +217,23 @@ def fourDvar(n, m_t, Nt, max_outer, max_inner , method, selectedTHETA = None , I
                 
                 
                 Atilde = Split_Prec_Hessian(Atilde, Precond_list)  #  Atilde = Fi...F1 @ F0 @ A @ F0 @ F1...Fi
+                AtildeCalcul = MatrixOperations(Atilde, n, n)
+                _, lambda_A  = AtildeCalcul.calculate_lambda()
+                T_Lanczos , V_Lanczos, dxs, iter, flag, beta_Lanczos, listRitzValues = CG(Atilde, 
+                                        du, btilde, max_inner, tol, get_T = True, PlotRitz=True)
+                
+                # Plot Ritz value for the preconditioned System over CG iteration
+                if False:
+                    listLambda_A = [lambda_A for i in range(iter+1)]
+                    CGiteration = [i+1 for i in range(iter+1)]
+                    plotRitzValues(listRitzValues, listLambda_A, CGiteration)
+                lambda_ , eignvect = get_ritzpair(T_Lanczos, V_Lanczos, iter, beta_Lanczos)    # Converged ritz pair
 
+        
 
-                dxs, iter = CG(Atilde, du, btilde, max_inner, tol, get_T = False)
+        if len(lambda_) == 0 and iter_outer < max_outer - 1: # Check if lambda_ is not empty 
+            raise EmptyLambdaError(f"Error : Ritz values didn't converge at the outer iteration {iter_outer}")
 
-       
         ###################################################################################################################
         dx = dxs[-n:]
         for Y in Precond_list[::-1]:

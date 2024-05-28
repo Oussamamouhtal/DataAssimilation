@@ -31,14 +31,14 @@ def plot(qudcost, max_outer, max_inner, OuterLoop = False, LineStyle = ':d',labe
 
 
 # ===================== The Problem Parameters =====================
-""" Choose n > Nt * m_t"""
-n = 300
-m_t = 40 
+""" Choose   n > Nt * m_t"""
+n = 100
+m_t = 30 
 Nt = 2  
 
 # ===================== The Solvers Parameters =====================
-""" Choose max_inner =< Nt * m_t"""
-max_inner = 60  # max iteration for cg loops
+""" Choose   max_inner =< Nt * m_t"""
+max_inner = 30  # max iteration for cg loops
 max_outer = 2   # max iteration for Gauss Newton loop
 
 
