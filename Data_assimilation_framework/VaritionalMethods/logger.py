@@ -42,7 +42,7 @@ Nt = 2
 # ===================== The Solvers Parameters =====================
 """ Choose   max_inner =< Nt * m_t"""
 max_outer = 2   # max iteration for Gauss Newton loop
-list_max_inner = [30, 40]  # max iteration for cg loops. (be sur that len(list_max_inner) = max_outer)
+list_max_inner = [30, 40]  # max iteration for cg loops. (be sure that len(list_max_inner) = max_outer)
 
 
 
