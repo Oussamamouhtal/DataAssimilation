@@ -40,7 +40,7 @@ from solvers import pcg, Bcg, Lanczos, CG, deflated_CG
 
 
 
-def fourDvar(n, m_t, Nt, max_outer, max_inner , method, selectedTHETA = None , IP = False):       
+def fourDvar(n, m_t, Nt, max_outer, list_max_inner , method, selectedTHETA = None , IP = False):       
     """
     fourDvar implements the minimization process in data assimilation.
     Parameters:
@@ -48,7 +48,7 @@ def fourDvar(n, m_t, Nt, max_outer, max_inner , method, selectedTHETA = None , I
         m_t             : total number of observations at a fixed time (int)
         Nt              : total number of observations at a fixed location (int)
         max_outer       : number of maximum outer loops (Gauss-Newton loop) (int)
-        max_inner       : number of maximum inner loops (Conjugate Gradient loop) (int)
+        list_max_inner       : number of maximum inner loops (Conjugate Gradient loop) (list of integer)
         method          : define the method to solve the inner loops (str):
                             Unprecon_CG : solving linear system without scaled LMP
                             Spectral    : solving linear system with scaled spectral LMP
@@ -164,7 +164,7 @@ def fourDvar(n, m_t, Nt, max_outer, max_inner , method, selectedTHETA = None , I
         # (Binv + HtRinvH) dx = Binv(xb - x) + Ht Rinv d
 
         if iter_outer == 0:
-            T_Lanczos , V_Lanczos, dxs, iter, flag, beta_Lanczos = CG(Atilde, du, btilde,  max_inner,tol, get_T = True)
+            T_Lanczos , V_Lanczos, dxs, iter, flag, beta_Lanczos = CG(Atilde, du, btilde,  list_max_inner[iter_outer],tol, get_T = True)
             lambda_ , eignvect = get_ritzpair(T_Lanczos, V_Lanczos, iter, beta_Lanczos)    # Converged ritz pair
 
         
@@ -179,7 +179,7 @@ def fourDvar(n, m_t, Nt, max_outer, max_inner , method, selectedTHETA = None , I
                     initialGuessClass = init_p(Atilde, btilde, lambda_, eignvect)
                     du = initialGuessClass.initialGuess()     # x_0 = tildeS_k tildeLambda_k^{-1} tildeS_k^{T} b 
 
-                dxs, iter = CG(Atilde, du, btilde, max_inner, tol, get_T = False)
+                dxs, iter = CG(Atilde, du, btilde, list_max_inner[iter_outer], tol, get_T = False)
                 
 
 
@@ -189,7 +189,7 @@ def fourDvar(n, m_t, Nt, max_outer, max_inner , method, selectedTHETA = None , I
                 """
                 Solving inner loops with deflated cg. The deflated CG will not be recycled from inner loops
                 """
-                dxs, iter = deflated_CG(Atilde, btilde, max_inner, tol , eignvect)
+                dxs, iter = deflated_CG(Atilde, btilde, list_max_inner[iter_outer], tol , eignvect)
 
             
             if method == 'Spectral_LMP':
@@ -220,7 +220,7 @@ def fourDvar(n, m_t, Nt, max_outer, max_inner , method, selectedTHETA = None , I
                 AtildeCalcul = MatrixOperations(Atilde, n, n)
                 _, lambda_A  = AtildeCalcul.calculate_lambda()
                 T_Lanczos , V_Lanczos, dxs, iter, flag, beta_Lanczos, listRitzValues = CG(Atilde, 
-                                        du, btilde, max_inner, tol, get_T = True, PlotRitz=True)
+                                        du, btilde, list_max_inner[iter_outer], tol, get_T = True, PlotRitz=True)
                 
                 # Plot Ritz value for the preconditioned System over CG iteration
                 if False:
