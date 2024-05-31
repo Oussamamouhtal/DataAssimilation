@@ -1,6 +1,7 @@
 """
   Module: Iterative Solvers 
   Author: Selime Gurol
+        : Oussama Mouhtal - Conjugate gradient and deflated conjugate gradient
   Licensing: this code is distributed under the CeCILL-C license
   Copyright (c) 2021 CERFACS
   Updates: 2022 - Lanczos code - Jean-Guillaume De Damas

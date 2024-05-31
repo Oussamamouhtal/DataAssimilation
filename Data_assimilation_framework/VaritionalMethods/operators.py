@@ -2,6 +2,7 @@
   Module: Operators for data assimilation
   Authors: Selime Gurol 
          : Olivier Goux - Diffusion operator for B
+         : Oussama Mouhtal - Scaled spectral LMP
   Licensing: this code is distributed under the CeCILL-C license
   Copyright (c) 2021 CERFACS
 """

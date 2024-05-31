@@ -1,6 +1,9 @@
 """
   Module: 4D-Variational Data Assimilation
   Authors: Selime Gurol
+         : Oussama Mouhtal - Plot for scaled Spectral LMP within CG,
+          and deflated CG
+             
   Licensing: this code is distributed under the CeCILL-C license
   Copyright (c) 2021 CERFACS
 """
